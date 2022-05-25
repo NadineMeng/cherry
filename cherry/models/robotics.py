@@ -153,12 +153,24 @@ class LinearValue(nn.Module):
         features = self._features(states)
         reg = self.reg * th.eye(features.size(1))
         reg = reg.to(states.device)
-        A = features.t() @ features + reg
-        b = features.t() @ returns
-        if hasattr(th, 'lstsq'):  # Required for torch < 1.3.0
-            coeffs, _ = th.lstsq(b, A)
+        for _ in range (5):
+            try:
+                A = features.t() @ features + reg
+                b = features.t() @ returns
+                if hasattr(th, 'lstsq'): # Required for torch < 1.3.0
+                    coeffs, _ = th.lstsq(b, A)
+                else:
+                    coeffs, _ = th.gels(b, A)
+                if th.isnan(coeffs).any() or th.isinf(coeffs).any():
+                    raise RuntimeError
+                break
+            except RuntimeError:
+                reg *= 10
         else:
-            coeffs, _ = th.gels(b, A)
+            raise RuntimeError('Unable to solve the normal equations in '
+                '`LinearFeatureBaseline`. The matrix X^T*X (with X the design '
+                'matrix) is not full-rank, regardless of the regularization '
+                '(maximum regularization: {0}).'.format(reg))
         self.linear.weight.data = coeffs.data.t()
 
     def forward(self, states):
