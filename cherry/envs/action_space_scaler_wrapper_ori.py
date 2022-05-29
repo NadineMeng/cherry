@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+#!/usr/bin/env python3
+
 import gym
 import numpy as np
 
@@ -24,11 +26,10 @@ class ActionSpaceScaler(Wrapper):
     def reset(self, *args, **kwargs):
         return self.env.reset(*args, **kwargs)
 
-
     def _normalize(self, action):
         lb = self.env.action_space.low
         ub = self.env.action_space.high
-        scaled_action = lb + (action + self.clip) * (ub - lb)/(2*self.clip)
+        scaled_action = lb + (action + self.clip) * 0.5 * (ub - lb)
         scaled_action = np.clip(scaled_action, lb, ub)
         return scaled_action
 
