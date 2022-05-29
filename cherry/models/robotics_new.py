@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 
-#!/usr/bin/env python3
-
 import torch as th
 import torch.nn as nn
 
@@ -12,16 +10,23 @@ class RoboticsMLP(nn.Module):
 
     """
     [[Source]](https://github.com/seba-1511/cherry/blob/master/cherry/models/robotics.py)
+
     **Description**
+
     A multi-layer perceptron with proper initialization for robotic control.
+
     **Credit**
+
     Adapted from Ilya Kostrikov's implementation.
+
     **Arguments**
+
     * **inputs_size** (int) - Size of input.
     * **output_size** (int) - Size of output.
     * **layer_sizes** (list, *optional*, default=None) - A list of ints,
       each indicating the size of a hidden layer.
       (Defaults to two hidden layers of 64 units.)
+
     **Example**
     ~~~python
     target_qf = ch.models.robotics.RoboticsMLP(23,
@@ -53,17 +58,24 @@ class RoboticsActor(RoboticsMLP):
 
     """
     [[Source]](https://github.com/seba-1511/cherry/blob/master/cherry/models/robotics.py)
+
     **Description**
+
     A multi-layer perceptron with initialization designed for choosing
     actions in continuous robotic environments.
+
     **Credit**
+
     Adapted from Ilya Kostrikov's implementation.
+
     **Arguments**
+
     * **inputs_size** (int) - Size of input.
     * **output_size** (int) - Size of action size.
     * **layer_sizes** (list, *optional*, default=None) - A list of ints,
       each indicating the size of a hidden layer.
       (Defaults to two hidden layers of 64 units.)
+
     **Example**
     ~~~python
     policy_mean = ch.models.robotics.Actor(28,
@@ -94,17 +106,26 @@ class LinearValue(nn.Module):
 
     """
     [[Source]](https://github.com/seba-1511/cherry/blob/master/cherry/models/robotics.py)
+
     **Description**
+
     A linear state-value function, whose parameters are found by minimizing
     least-squares.
+
     **Credit**
+
     Adapted from Tristan Deleu's implementation.
+
     **References**
+
     1. Duan et al. 2016. “Benchmarking Deep Reinforcement Learning for Continuous Control.”
     2. [https://github.com/tristandeleu/pytorch-maml-rl](https://github.com/tristandeleu/pytorch-maml-rl)
+
     **Arguments**
+
     * **inputs_size** (int) - Size of input.
     * **reg** (float, *optional*, default=1e-5) - Regularization coefficient.
+
     **Example**
     ~~~python
     states = replay.state()
@@ -132,12 +153,24 @@ class LinearValue(nn.Module):
         features = self._features(states)
         reg = self.reg * th.eye(features.size(1))
         reg = reg.to(states.device)
-        A = features.t() @ features + reg
-        b = features.t() @ returns
-        if hasattr(th, 'lstsq'):  # Required for torch < 1.3.0
-            coeffs, _ = th.lstsq(b, A)
+        for _ in range (5):
+            try:
+                A = features.t() @ features + reg
+                b = features.t() @ returns
+                if hasattr(th, 'lstsq'): # Required for torch < 1.3.0
+                    coeffs, _ = th.lstsq(b, A)
+                else:
+                    coeffs, _ = th.gels(b, A)
+                if th.isnan(coeffs).any() or th.isinf(coeffs).any():
+                    raise RuntimeError
+                break
+            except RuntimeError:
+                reg *= 10
         else:
-            coeffs, _ = th.gels(b, A)
+            raise RuntimeError('Unable to solve the normal equations in '
+                '`LinearFeatureBaseline`. The matrix X^T*X (with X the design '
+                'matrix) is not full-rank, regardless of the regularization '
+                '(maximum regularization: {0}).'.format(reg))
         self.linear.weight.data = coeffs.data.t()
 
     def forward(self, states):
