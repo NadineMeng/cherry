@@ -4,6 +4,8 @@ import cherry as ch
 from cherry._utils import _min_size, _istensorable
 from .base import Wrapper
 from .utils import is_vectorized
+import torch
+import time
 
 from collections.abc import Iterable
 
@@ -75,6 +77,7 @@ class Runner(Wrapper):
         self._current_state = None
 
     def reset(self, *args, **kwargs):
+        #self._current_state = torch.flatten(self.env.reset(*args, **kwargs))
         self._current_state = self.env.reset(*args, **kwargs)
         self._needs_reset = False
         return self._current_state
@@ -87,7 +90,8 @@ class Runner(Wrapper):
             get_action,
             steps=None,
             episodes=None,
-            render=False):
+            render=False,
+            flatten=False):
         """
         Runner wrapper's run method.
         """
@@ -114,7 +118,10 @@ class Runner(Wrapper):
             if self._needs_reset:
                 self.reset()
             info = {}
+            if flatten:
+                self._current_state = torch.flatten(self._current_state)
             action = get_action(self._current_state)
+            #print('action:',action)
             if isinstance(action, tuple):
                 skip_unpack = False
                 if self.is_vectorized:
@@ -137,6 +144,8 @@ class Runner(Wrapper):
                         raise NotImplementedError(msg)
             old_state = self._current_state
             state, reward, done, _ = self.env.step(action)
+            if flatten:
+                state=torch.flatten(state)
             if not self.is_vectorized and done:
                 collected_episodes += 1
                 self._needs_reset = True
@@ -146,4 +155,5 @@ class Runner(Wrapper):
             self._current_state = state
             if render:
                 self.env.render()
+                time.sleep(0.01)
             collected_steps += 1
