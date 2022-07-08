@@ -140,7 +140,9 @@ class LinearValue(nn.Module):
 
     def __init__(self, input_size, reg=1e-5):
         super(LinearValue, self).__init__()
+        #print('baseline_input:',input_size)
         self.linear = nn.Linear(2 * input_size + 4, 1, bias=False)
+        #print('baseline:',self.linear)
         self.reg = reg
 
     def _features(self, states):
@@ -150,6 +152,7 @@ class LinearValue(nn.Module):
         return th.cat([states, states**2, al, al**2, al**3, ones], dim=1)
 
     def fit(self, states, returns):
+        print('baseline:',self.linear)
         features = self._features(states)
         reg = self.reg * th.eye(features.size(1))
         reg = reg.to(states.device)

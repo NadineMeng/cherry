@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from nis import cat
 import cherry as ch
 from cherry._utils import _min_size, _istensorable
 from .base import Wrapper
@@ -79,6 +80,8 @@ class Runner(Wrapper):
     def reset(self, *args, **kwargs):
         #self._current_state = torch.flatten(self.env.reset(*args, **kwargs))
         self._current_state = self.env.reset(*args, **kwargs)
+        
+       
         self._needs_reset = False
         return self._current_state
 
@@ -91,7 +94,8 @@ class Runner(Wrapper):
             steps=None,
             episodes=None,
             render=False,
-            flatten=False):
+            flatten=False,
+            cat=False):
         """
         Runner wrapper's run method.
         """
@@ -117,9 +121,17 @@ class Runner(Wrapper):
                 return replay
             if self._needs_reset:
                 self.reset()
+                if flatten:
+                    self._current_state = torch.flatten(self._current_state)
+                if cat:
+                    x=torch.randn(10)
+                    self._current_state=torch.cat((x,self._current_state),0)
+
+
             info = {}
             if flatten:
                 self._current_state = torch.flatten(self._current_state)
+            #print('current_size:',self._current_state.size())
             action = get_action(self._current_state)
             #print('action:',action)
             if isinstance(action, tuple):
@@ -143,9 +155,14 @@ class Runner(Wrapper):
                         msg = 'get_action should return 1 or 2 values.'
                         raise NotImplementedError(msg)
             old_state = self._current_state
+            
+            #print('old_state:',old_state.size())
             state, reward, done, _ = self.env.step(action)
             if flatten:
                 state=torch.flatten(state)
+            if cat:
+                x=torch.randn(10)
+                state=torch.cat((x,state),0)
             if not self.is_vectorized and done:
                 collected_episodes += 1
                 self._needs_reset = True
@@ -153,6 +170,7 @@ class Runner(Wrapper):
                 collected_episodes += sum(done)
             replay.append(old_state, action, reward, state, done, **info)
             self._current_state = state
+            #print('state:',state)
             if render:
                 self.env.render()
                 time.sleep(0.01)

@@ -9,7 +9,7 @@ from .openai_atari_wrapper import OpenAIAtari
 from .reward_clipper_wrapper import RewardClipper
 from .timestep_wrapper import AddTimestep
 #from .monitor_wrapper import Monitor
-from .recorder_wrapper import Recorder
+#from .recorder_wrapper import Recorder
 from .normalizer_wrapper import Normalizer
 from .state_normalizer_wrapper import StateNormalizer
 from .reward_normalizer_wrapper import RewardNormalizer
