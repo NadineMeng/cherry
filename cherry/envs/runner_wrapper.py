@@ -124,7 +124,7 @@ class Runner(Wrapper):
                 if flatten:
                     self._current_state = torch.flatten(self._current_state)
                 if cat:
-                    x=torch.randn(5)
+                    x=torch.randn(9)
                     self._current_state=torch.cat((x,self._current_state),0)
 
 
@@ -161,7 +161,7 @@ class Runner(Wrapper):
             if flatten:
                 state=torch.flatten(state)
             if cat:
-                x=torch.randn(5)
+                x=torch.randn(9)
                 state=torch.cat((x,state),0)
             if not self.is_vectorized and done:
                 collected_episodes += 1
