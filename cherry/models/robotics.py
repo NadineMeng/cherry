@@ -152,7 +152,7 @@ class LinearValue(nn.Module):
         return th.cat([states, states**2, al, al**2, al**3, ones], dim=1)
 
     def fit(self, states, returns):
-        print('baseline:',self.linear)
+        #print('baseline:',self.linear)
         features = self._features(states)
         reg = self.reg * th.eye(features.size(1))
         reg = reg.to(states.device)
